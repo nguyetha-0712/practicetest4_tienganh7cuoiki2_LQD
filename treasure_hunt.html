@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Hunt Master - Practice 4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #e0f2fe; /* Xanh nước biển nhạt */
+            overflow-x: hidden;
+        }
+        .pink-accent { color: #f472b6; }
+        .bg-pink-accent { background-color: #f472b6; }
+        .card-shadow { box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        .island-node {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .island-node:hover { transform: scale(1.1); }
+        .island-active { filter: drop-shadow(0 0 10px #f472b6); border: 4px solid #f472b6; }
+        .island-locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .explorer-anim { animation: float 3s ease-in-out infinite; }
+        
+        .progress-bar {
+            height: 12px;
+            border-radius: 6px;
+            background: #cbd5e1;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f472b6, #ec4899);
+            transition: width 0.5s ease-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #f472b6; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+<div id="app" class="min-h-screen flex flex-col">
+    <!-- Header / Progress Section -->
+    <header class="bg-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="text-2xl">🧭</div>
+                <div class="flex-1 min-w-[150px]">
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiến trình</div>
+                    <div class="progress-bar mt-1">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+                    <span class="text-blue-600 font-bold">💎 <span id="scoreDisplay">0</span></span>
+                </div>
+                <div class="font-bold text-pink-500" id="stageName">Map Overview</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl mx-auto w-full p-4 relative">
+        
+        <!-- START SCREEN: MAP OVERVIEW -->
+        <div id="mapScreen" class="py-8">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-blue-600 mb-2">TREASURE HUNT MASTER</h1>
+                <p class="text-slate-500 italic">Practice Test 4 Edition</p>
+            </div>
+
+            <div class="relative bg-white rounded-3xl p-8 card-shadow overflow-hidden min-h-[400px] flex flex-col items-center justify-center border-4 border-blue-100">
+                <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 20px 20px;"></div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6 w-full z-10">
+                    <!-- Island 1 -->
+                    <div onclick="startStage(0)" id="island0" class="island-node bg-blue-50 p-4 rounded-2xl text-center border-2 border-dashed border-blue-300">
+                        <div class="text-4xl mb-2">🏝️</div>
+                        <div class="font-bold text-sm">PHONETIC</div>
+                    </div>
+                    <!-- Island 2 -->
+                    <div onclick="startStage(1)" id="island1" class="island-node island-locked bg-blue-50 p-4 rounded-2xl text-center border-2 border-dashed border-blue-300">
+                        <div class="text-4xl mb-2">🌴</div>
+                        <div class="font-bold text-sm text-wrap">GRAMMAR & VOCAB</div>
+                    </div>
+                    <!-- Island 3 -->
+                    <div onclick="startStage(2)" id="island2" class="island-node island-locked bg-blue-50 p-4 rounded-2xl text-center border-2 border-dashed border-blue-300">
+                        <div class="text-4xl mb-2">🏜️</div>
+                        <div class="font-bold text-sm">READING</div>
+                    </div>
+                    <!-- Island 4 -->
+                    <div onclick="startStage(3)" id="island3" class="island-node island-locked bg-blue-50 p-4 rounded-2xl text-center border-2 border-dashed border-blue-300">
+                        <div class="text-4xl mb-2">🏔️</div>
+                        <div class="font-bold text-sm">WRITING</div>
+                    </div>
+                    <!-- Island 5 -->
+                    <div onclick="startStage(4)" id="island4" class="island-node island-locked bg-blue-50 p-4 rounded-2xl text-center border-2 border-dashed border-blue-300">
+                        <div class="text-4xl mb-2">🌊</div>
+                        <div class="font-bold text-sm">LISTENING</div>
+                    </div>
+                </div>
+
+                <div class="mt-12 explorer-anim text-center">
+                    <div class="text-6xl mb-2">👦</div>
+                    <div class="bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-lg">
+                        Explorer: "Sẵn sàng tìm kho báu chưa?"
+                    </div>
+                </div>
+                
+                <button onclick="startStage(currentStageIndex)" id="btnMainAction" class="mt-8 bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-12 rounded-full text-xl shadow-xl transition-all">
+                    BẮT ĐẦU NGAY! 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="gameScreen" class="hidden py-4">
+            <div id="questionContainer" class="bg-white rounded-3xl p-6 md:p-8 card-shadow border-4 border-white">
+                <!-- Question content injected here -->
+            </div>
+            
+            <div id="feedbackContainer" class="hidden mt-6 bg-white rounded-3xl p-6 card-shadow border-4 border-blue-200">
+                <!-- Explanations injected here -->
+            </div>
+
+            <div id="navigation" class="hidden mt-6 flex justify-between items-center">
+                <button id="btnNext" onclick="nextQuestion()" class="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg flex items-center gap-2">
+                    Tiếp tục <span class="text-xl">➔</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="endScreen" class="hidden py-8 text-center">
+            <div class="bg-white rounded-3xl p-12 card-shadow border-4 border-yellow-400">
+                <div class="text-8xl mb-6">🏆</div>
+                <h2 class="text-4xl font-bold text-blue-600 mb-4">YOU FOUND THE TREASURE!</h2>
+                <div class="text-6xl font-bold text-pink-500 mb-4" id="finalScoreText">0/52</div>
+                <div class="text-2xl font-semibold mb-8" id="rankText">Excellent! 🌟</div>
+                
+                <div class="max-w-xs mx-auto">
+                    <div class="bg-slate-100 p-4 rounded-xl mb-6">
+                        <h3 class="font-bold mb-2">Leaderboard (Local)</h3>
+                        <div id="leaderboardList" class="text-sm space-y-1">
+                            <!-- Leaderboard logic -->
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-xl transition-all">
+                    CHƠI LẠI 🔄
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- UI Audio Elements (Placeholders) -->
+    <audio id="soundCorrect" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+    <audio id="soundWrong" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"></audio>
+</div>
+
+<script>
+/* DATA STRUCTURE FOR PRACTICE TEST 4 */
+const stages = [
+    { name: "🏝️ PHONETIC", icon: "🏝️" },
+    { name: "🌴 GRAMMAR & VOCAB", icon: "🌴" },
+    { name: "🏜️ READING", icon: "🏜️" },
+    { name: "🏔️ WRITING", icon: "🏔️" },
+    { name: "🌊 LISTENING", icon: "🌊" }
+];
+
+const questions = [
+    // PHONETIC (1-5)
+    {
+        stage: 0,
+        type: "mcq",
+        q: "Choose the word whose underlined part differs in pronunciation: <u>th</u>ealthy, ma<u>th</u>ematics, al<u>th</u>ough, <u>th</u>ought",
+        options: ["healthy", "mathematics", "although", "thought"],
+        correct: 2,
+        explanation: {
+            correct: "C. although",
+            translation: { en: "The underlined part in 'although' is pronounced /ð/, while others are /θ/.", vi: "Phần gạch chân trong 'although' phát âm là /ð/, các từ còn lại phát âm là /θ/." },
+            vocab: [
+                { word: "healthy", pr: "/ˈhelθi/", en: "in good health", vi: "khỏe mạnh", type: "adj", ex: "She is healthy because she exercises." },
+                { word: "mathematics", pr: "/ˌmæθəˈmætɪks/", en: "the study of numbers", vi: "toán học", type: "noun", ex: "I love mathematics." },
+                { word: "although", pr: "/ɔːlˈðəʊ/", en: "despite the fact that", vi: "mặc dù", type: "conj", ex: "Although it rained, we went out." },
+                { word: "thought", pr: "/θɔːt/", en: "past tense of think", vi: "suy nghĩ", type: "verb", ex: "I thought you were busy." }
+            ],
+            analysis: "Âm /θ/ (vô thanh) vs /ð/ (hữu thanh). 'Although' là từ chức năng nên thường đọc là /ð/.",
+            wrong: "A, B, D đều có âm /θ/.",
+            tip: "Các từ nối/đại từ như 'this, that, though' thường đọc là /ð/."
+        }
+    },
+    {
+        stage: 0,
+        type: "mcq",
+        q: "Choose the word whose underlined part differs: bak<u>e</u>ry, pock<u>e</u>t, newsag<u>e</u>nt, lant<u>e</u>rn",
+        options: ["bakery", "pocket", "newsagent", "lantern"],
+        correct: 2,
+        explanation: {
+            correct: "C. newsagent",
+            translation: { en: "The 'e' in 'newsagent' is pronounced /ə/ or /eɪ/, others are /ɪ/ or /ə/ depending on dialect, but 'agent' is distinct.", vi: "Chữ 'e' trong 'newsagent' (âm /ə/) khác biệt so với âm /ɪ/ trong các từ còn lại." },
+            vocab: [
+                { word: "bakery", pr: "/ˈbeɪkəri/", en: "place for bread", vi: "tiệm bánh", type: "noun", ex: "Go to the bakery." },
+                { word: "pocket", pr: "/ˈpɒkɪt/", en: "small pouch in clothes", vi: "túi áo/quần", type: "noun", ex: "He has a coin in his pocket." },
+                { word: "newsagent", pr: "/ˈnjuːzeɪdʒənt/", en: "person selling papers", vi: "người bán báo", type: "noun", ex: "Buy a paper at the newsagent." },
+                { word: "lantern", pr: "/ˈlæntən/", en: "portable lamp", vi: "đèn lồng", type: "noun", ex: "We carry a lantern." }
+            ],
+            analysis: "Phân tích âm tiết không nhấn trọng âm. 'Pocket' âm /ɪ/, 'newsagent' âm /ə/.",
+            wrong: "A, B, D có cách phát âm e tương tự nhau ở vị trí không trọng âm.",
+            tip: "Đuôi 'et' trong 'pocket' thường đọc là /ɪt/."
+        }
+    },
+    {
+        stage: 0,
+        type: "mcq",
+        q: "Choose the word whose underlined part differs: mark<u>ed</u>, observ<u>ed</u>, prepar<u>ed</u>, turn<u>ed</u>",
+        options: ["marked", "observed", "prepared", "turned"],
+        correct: 0,
+        explanation: {
+            correct: "A. marked",
+            translation: { en: "'Marked' ends in /t/ because it follows a voiceless sound /k/.", vi: "'Marked' kết thúc bằng âm /t/ vì sau âm vô thanh /k/." },
+            vocab: [
+                { word: "marked", pr: "/mɑːkt/", en: "having a mark", vi: "được đánh dấu", type: "verb-ed", ex: "He marked the book." },
+                { word: "observed", pr: "/əbˈzɜːvd/", en: "watched carefully", vi: "quan sát", type: "verb-ed", ex: "She observed the stars." },
+                { word: "prepared", pr: "/prɪˈpeəd/", en: "ready", vi: "chuẩn bị", type: "verb-ed", ex: "We prepared lunch." },
+                { word: "turned", pr: "/tɜːnd/", en: "changed direction", vi: "quay lại", type: "verb-ed", ex: "He turned the page." }
+            ],
+            analysis: "Quy tắc phát âm -ed: sau /k/ phát âm là /t/. Sau các phụ âm hữu thanh còn lại phát âm là /d/.",
+            wrong: "B, C, D đều phát âm là /d/.",
+            tip: "Sáng sớm pha trà cho (s, p, k, t, ch, f) -> phát âm là /t/."
+        }
+    },
+    {
+        stage: 0,
+        type: "mcq",
+        q: "Choose the word that differs in the position of primary stress:",
+        options: ["compete", "dissect", "physics", "because"],
+        correct: 2,
+        explanation: {
+            correct: "C. physics",
+            translation: { en: "'Physics' has stress on the 1st syllable, others on the 2nd.", vi: "'Physics' nhấn âm 1, các từ còn lại nhấn âm 2." },
+            vocab: [
+                { word: "compete", pr: "/kəmˈpiːt/", en: "take part in a contest", vi: "thi đấu", type: "verb", ex: "They compete for the prize." },
+                { word: "dissect", pr: "/daɪˈsekt/", en: "cut up for study", vi: "mổ xẻ/phân tích", type: "verb", ex: "Dissect the frog." },
+                { word: "physics", pr: "/ˈfɪzɪks/", en: "study of matter/energy", vi: "vật lý", type: "noun", ex: "Physics is hard." },
+                { word: "because", pr: "/bɪˈkɒz/", en: "for the reason that", vi: "bởi vì", type: "conj", ex: "Because it's hot." }
+            ],
+            analysis: "Động từ 2 âm tiết thường nhấn âm 2. Danh từ 'physics' nhấn âm 1.",
+            wrong: "A, B, D nhấn âm 2.",
+            tip: "Hầu hết danh từ 2 âm tiết nhấn âm 1."
+        }
+    },
+    {
+        stage: 0,
+        type: "mcq",
+        q: "Choose the word that differs in the position of primary stress:",
+        options: ["assistant", "greengrocer", "pharmacy", "heritage"],
+        correct: 0,
+        explanation: {
+            correct: "A. assistant",
+            translation: { en: "'Assistant' has stress on the 2nd syllable, others on the 1st.", vi: "'Assistant' nhấn âm 2, các từ còn lại nhấn âm 1." },
+            vocab: [
+                { word: "assistant", pr: "/əˈsɪstənt/", en: "person who helps", vi: "trợ lý", type: "noun", ex: "The shop assistant is kind." },
+                { word: "greengrocer", pr: "/ˈɡriːnɡrəʊsə(r)/", en: "person selling veggies", vi: "người bán rau", type: "noun", ex: "Go to the greengrocer." },
+                { word: "pharmacy", pr: "/ˈfɑːməsi/", en: "place for medicine", vi: "tiệm thuốc", type: "noun", ex: "The pharmacy is open." },
+                { word: "heritage", pr: "/ˈherɪtɪdʒ/", en: "valued traditions", vi: "di sản", type: "noun", ex: "Vietnam has rich heritage." }
+            ],
+            analysis: "Assistant (âm 2). Greengrocer, Pharmacy, Heritage (âm 1).",
+            wrong: "B, C, D đều nhấn âm 1.",
+            tip: "Từ có đuôi -ant thường không đổi trọng âm của từ gốc (assist -> assistant)."
+        }
+    },
+
+    // GRAMMAR (6-22)
+    {
+        stage: 1,
+        type: "mcq",
+        q: "There ________ a MRT station here, but it has disappeared.",
+        options: ["were", "used to have", "use to have", "used to be"],
+        correct: 3,
+        explanation: {
+            correct: "D. used to be",
+            translation: { en: "We use 'used to be' to describe a past state that no longer exists.", vi: "Chúng ta dùng 'used to be' để mô tả một trạng thái trong quá khứ không còn tồn tại." },
+            vocab: [
+                { word: "used to", pr: "/juːst tu/", en: "past habit/state", vi: "đã từng", type: "modal", ex: "I used to swim." },
+                { word: "disappeared", pr: "/ˌdɪsəˈpɪəd/", en: "vanished", vi: "biến mất", type: "verb", ex: "The cat disappeared." }
+            ],
+            analysis: "Cấu trúc: There used to be + N (Đã từng có...). Không dùng 'used to have' vì 'there' đi với 'be'.",
+            wrong: "A sai thì. B, C sai cấu trúc ngữ pháp với 'there'.",
+            tip: "There is/are -> There used to be."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "________ does it take to go from Ha Noi to Pleiku by plane?",
+        options: ["How much", "How many", "How long", "How far"],
+        correct: 2,
+        explanation: {
+            correct: "C. How long",
+            translation: { en: "'How long' is used to ask about the duration of time.", vi: "'How long' dùng để hỏi về khoảng thời gian." },
+            vocab: [
+                { word: "take", pr: "/teɪk/", en: "require time", vi: "tốn (thời gian)", type: "verb", ex: "It takes 2 hours." }
+            ],
+            analysis: "Cấu trúc: How long + does it take + (someone) + to do something?",
+            wrong: "A, B hỏi số lượng. D hỏi khoảng cách (distance).",
+            tip: "Thấy 'take' + 'time' -> nghĩ ngay 'How long'."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "You should ________ right and left when you go across the road.",
+        options: ["see", "look", "be", "take"],
+        correct: 1,
+        explanation: {
+            correct: "B. look",
+            translation: { en: "You should look both ways for safety.", vi: "Bạn nên quan sát (nhìn) trái phải khi băng qua đường." },
+            vocab: [
+                { word: "look", pr: "/lʊk/", en: "direct eyes", vi: "nhìn", type: "verb", ex: "Look at me." }
+            ],
+            analysis: "Collocation: look right and left (nhìn trái nhìn phải).",
+            wrong: "A (see) là thấy tự nhiên. C, D không hợp nghĩa.",
+            tip: "Look + direction (left/right)."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Hurry up or we can’t ________ the last bus home.",
+        options: ["keep", "follow", "go", "catch"],
+        correct: 3,
+        explanation: {
+            correct: "D. catch",
+            translation: { en: "'Catch the bus' is the standard phrase for getting on a bus.", vi: "'Catch the bus' là cụm từ chuẩn để chỉ việc bắt xe buýt." },
+            vocab: [
+                { word: "catch", pr: "/kætʃ/", en: "get on a vehicle", vi: "bắt (xe)", type: "verb", ex: "Catch the train." }
+            ],
+            analysis: "Cụm từ đi kèm: catch a bus/train/taxi.",
+            wrong: "A (giữ), B (theo), C (đi) không tạo thành cụm từ đúng với phương tiện.",
+            tip: "Catch the bus = Bắt xe buýt."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "When stuck ________ traffic, everyone dreams of having a flying car.",
+        options: ["in", "on", "by", "off"],
+        correct: 0,
+        explanation: {
+            correct: "A. in",
+            translation: { en: "The phrase is 'stuck in traffic'.", vi: "Cụm từ cố định là 'stuck in traffic' (kẹt xe)." },
+            vocab: [
+                { word: "stuck", pr: "/stʌk/", en: "unable to move", vi: "bị kẹt", type: "adj", ex: "I'm stuck in the elevator." }
+            ],
+            analysis: "Giới từ đi với stuck: stuck in something.",
+            wrong: "B, C, D không đi với 'stuck' trong ngữ cảnh này.",
+            tip: "Cứ kẹt xe là 'stuck in traffic'."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "People put pumpkin ________ outside the homes during Halloween.",
+        options: ["lights", "lanterns", "neon signs", "bulbs"],
+        correct: 1,
+        explanation: {
+            correct: "B. lanterns",
+            translation: { en: "Pumpkin lanterns (Jack-o'-lanterns) are traditional for Halloween.", vi: "Đèn lồng bí ngô là truyền thống của lễ Halloween." },
+            vocab: [
+                { word: "lantern", pr: "/ˈlæntən/", en: "portable lamp", vi: "đèn lồng", type: "noun", ex: "Halloween lanterns." }
+            ],
+            analysis: "Văn hóa: Halloween -> Pumpkin lanterns.",
+            wrong: "A (đèn chung), C (biển quảng cáo), D (bóng đèn tròn) không đúng văn hóa.",
+            tip: "Halloween + Pumpkin = Lantern."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "The festival ________ annually at the end of August.",
+        options: ["occurs", "holds", "takes place", "are held"],
+        correct: 2,
+        explanation: {
+            correct: "C. takes place",
+            translation: { en: "'Takes place' means to happen.", vi: "'Takes place' có nghĩa là diễn ra." },
+            vocab: [
+                { word: "take place", pr: "/teɪk pleɪs/", en: "to happen", vi: "diễn ra", type: "phrasal verb", ex: "The meeting takes place at 9." }
+            ],
+            analysis: "Chủ ngữ số ít 'The festival' + V(s/es). 'Takes place' dùng cho sự kiện đã được lên lịch.",
+            wrong: "A (xảy ra bất ngờ). B (thiếu bị động). D (sai hòa hợp số ít/nhiều).",
+            tip: "Sự kiện được lên lịch -> dùng 'takes place'."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "She is hard working, ________ she isn’t lucky in examinations.",
+        options: ["Therefore", "But", "However", "So"],
+        correct: 1,
+        explanation: {
+            correct: "B. But",
+            translation: { en: "'But' connects two contrasting ideas.", vi: "'But' dùng để nối hai ý tương phản." },
+            vocab: [
+                { word: "hard working", pr: "/ˌhɑːd ˈwɜːkɪŋ/", en: "diligent", vi: "chăm chỉ", type: "adj", ex: "He is hard working." }
+            ],
+            analysis: "Câu có dấu phẩy ở giữa và nối 2 mệnh đề tương phản -> dùng 'but'.",
+            wrong: "A (Vì vậy), D (Nên) chỉ kết quả. C (Tuy nhiên) thường đứng đầu câu hoặc sau dấu chấm phẩy.",
+            tip: "Contrast + comma (,) = but."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "She decided to quit this job ________ the high salary.",
+        options: ["because of", "despite", "because", "although"],
+        correct: 1,
+        explanation: {
+            correct: "B. despite",
+            translation: { en: "'Despite' is followed by a noun and shows contrast.", vi: "'Despite' đi với danh từ và chỉ sự nhượng bộ/tương phản." },
+            vocab: [
+                { word: "quit", pr: "/kwɪt/", en: "to leave", vi: "nghỉ việc", type: "verb", ex: "I quit my job." }
+            ],
+            analysis: "Cấu trúc: Despite + N/V-ing. 'The high salary' là cụm danh từ. Nghĩa tương phản (lương cao mà vẫn nghỉ).",
+            wrong: "A (vì) không hợp nghĩa. C, D đi với mệnh đề (S+V).",
+            tip: "Despite/In spite of + N."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "The ending of the film is ________. All audiences are very sad.",
+        options: ["disappointed", "satisfying", "disappointing", "satisfied"],
+        correct: 2,
+        explanation: {
+            correct: "C. disappointing",
+            translation: { en: "We use -ing adjectives to describe the nature of things.", vi: "Dùng tính từ đuôi -ing để mô tả bản chất của sự vật." },
+            vocab: [
+                { word: "disappointing", pr: "/ˌdɪsəˈpɔɪntɪŋ/", en: "not as good as hoped", vi: "đáng thất vọng", type: "adj", ex: "A disappointing result." }
+            ],
+            analysis: "Tính từ mô tả 'The ending' (vật) -> dùng đuôi -ing.",
+            wrong: "A, D (đuôi -ed) dùng cho cảm xúc con người. B (thỏa mãn) không hợp ngữ cảnh 'sad'.",
+            tip: "Vật -> -ing, Người -> -ed."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "The play will start at the ________ time as yesterday.",
+        options: ["same", "too", "either", "like"],
+        correct: 0,
+        explanation: {
+            correct: "A. same",
+            translation: { en: "The phrase is 'the same ... as'.", vi: "Cấu trúc so sánh bằng: 'the same + N + as'." },
+            vocab: [
+                { word: "same", pr: "/seɪm/", en: "identical", vi: "giống nhau", type: "adj", ex: "We are the same age." }
+            ],
+            analysis: "Cấu trúc: the same as (giống với).",
+            wrong: "B, C không dùng so sánh. D 'like' không đi với 'the' ở trước.",
+            tip: "The + ... + as -> Nghĩ đến 'same'."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "My younger sister has a very ________ character from me.",
+        options: ["different", "as", "same", "like"],
+        correct: 0,
+        explanation: {
+            correct: "A. different",
+            translation: { en: "'Different' usually goes with 'from'.", vi: "'Different' thường đi kèm với 'from' (khác với)." },
+            vocab: [
+                { word: "different", pr: "/ˈdɪfrənt/", en: "not the same", vi: "khác", type: "adj", ex: "Life is different now." }
+            ],
+            analysis: "Cấu trúc: different from (khác với).",
+            wrong: "B, C, D không đi với 'from' trong so sánh.",
+            tip: "Different + from."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "This car doesn’t cost ________ the other one because it’s not new.",
+        options: ["as many as", "as much as", "the same", "twice as many as"],
+        correct: 1,
+        explanation: {
+            correct: "B. as much as",
+            translation: { en: "'Cost' refers to money, which is uncountable, so we use 'as much as'.", vi: "'Cost' liên quan đến tiền bạc (không đếm được) nên dùng 'as much as'." },
+            vocab: [
+                { word: "cost", pr: "/kɒst/", en: "price of something", vi: "giá cả", type: "verb/noun", ex: "It costs $10." }
+            ],
+            analysis: "So sánh bằng với tiền bạc (không đếm được): as much as.",
+            wrong: "A, D dùng cho danh từ đếm được số nhiều. C thiếu 'as'.",
+            tip: "Tiền, thời gian -> much."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "People won’t use flying cars ________ the year 2050.",
+        options: ["when", "after", "during", "until"],
+        correct: 3,
+        explanation: {
+            correct: "D. until",
+            translation: { en: "'Until' means up to that time.", vi: "'Until' có nghĩa là cho đến khi." },
+            vocab: [
+                { word: "until", pr: "/ənˈtɪl/", en: "up to a point", vi: "cho đến khi", type: "prep", ex: "Wait until 5." }
+            ],
+            analysis: "Mệnh đề phủ định (won't) + until: không làm gì cho tới khi.",
+            wrong: "A, B, C không hợp logic 'dự đoán tương lai'.",
+            tip: "Not ... until = Mãi đến khi."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Which ________ of transport do you think will be used in the future?",
+        options: ["mean", "meaning", "meanings", "means"],
+        correct: 3,
+        explanation: {
+            correct: "D. means",
+            translation: { en: "'Means of transport' is a fixed singular/plural phrase.", vi: "'Means of transport' là cụm từ cố định (phương tiện giao thông)." },
+            vocab: [
+                { word: "means", pr: "/miːnz/", en: "method/way", vi: "cách thức/phương tiện", type: "noun", ex: "A means of communication." }
+            ],
+            analysis: "Means of transport (số ít hay số nhiều đều dùng 'means').",
+            wrong: "A (động từ), B (ý nghĩa), C (các ý nghĩa).",
+            tip: "Always: 'means of transport'."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Shop Assistant: “Can I help you?” – George: “________”",
+        options: ["Yes, I should.", "Yes, I’m looking for a dress.", "It’s a good idea.", "No, let me alone."],
+        correct: 1,
+        explanation: {
+            correct: "B. Yes, I’m looking for a dress.",
+            translation: { en: "Standard response to an offer of help in a shop.", vi: "Câu trả lời tiêu chuẩn khi được đề nghị giúp đỡ trong cửa hàng." },
+            vocab: [
+                { word: "looking for", pr: "/ˈlʊkɪŋ fɔː(r)/", en: "searching", vi: "tìm kiếm", type: "phrasal verb", ex: "I'm looking for my keys." }
+            ],
+            analysis: "Hỏi 'Can I help you?' -> Trả lời mục đích mua hàng.",
+            wrong: "A, C không liên quan. D rất bất lịch sự.",
+            tip: "Shopping -> I'm looking for..."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Peter: “Mom, I’ve got a high temperature.” – Mom: “________”",
+        options: ["Turn on the fan.", "Are you sure?", "You shouldn’t have played much video games.", "You should take an aspirin."],
+        correct: 3,
+        explanation: {
+            correct: "D. You should take an aspirin.",
+            translation: { en: "Giving advice for a medical problem.", vi: "Đưa ra lời khuyên cho vấn đề sức khỏe." },
+            vocab: [
+                { word: "temperature", pr: "/ˈtemprətʃə(r)/", en: "fever", vi: "nhiệt độ/sốt", type: "noun", ex: "He has a temperature." }
+            ],
+            analysis: "Có triệu chứng bệnh -> Khuyên uống thuốc/đi khám.",
+            wrong: "A (bật quạt khi sốt là sai). B (nghi ngờ không giúp ích). C (trách móc không giải quyết vấn đề ngay).",
+            tip: "Health problem -> Should + medicine."
+        }
+    },
+
+    // ERROR CORRECTION (23-26)
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Identify the ERROR: I think more (A) people are going to use (B) public transportation in the future (C).",
+        options: ["(A) people", "(B) are going to use", "(C) in the future", "No error"],
+        correct: 3,
+        explanation: {
+            correct: "D. No error",
+            translation: { en: "The sentence is grammatically correct.", vi: "Câu này hoàn toàn đúng ngữ pháp." },
+            vocab: [
+                { word: "public transportation", pr: "/ˌpʌblɪk ˌtrænspɔːˈteɪʃn/", en: "buses, trains, etc.", vi: "phương tiện công cộng", type: "noun", ex: "I use public transportation." }
+            ],
+            analysis: "Dự đoán tương lai có căn cứ/ý định: be going to. Mọi thành phần đều ổn.",
+            wrong: "Các phương án khác đều đúng ngữ pháp.",
+            tip: "Đôi khi đề bài 'lừa' và câu không có lỗi."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Identify the ERROR: Stop playing (A) games and work on (B) your homework. You have to (C) turn it up (D) tomorrow.",
+        options: ["(A) playing", "(B) work on", "(C) have to", "(D) turn it up"],
+        correct: 3,
+        explanation: {
+            correct: "D. turn it up -> turn it in",
+            translation: { en: "'Turn in' means to hand over work, 'turn up' means increase volume or appear.", vi: "'Turn in' nghĩa là nộp bài, 'turn up' nghĩa là tăng âm lượng hoặc xuất hiện." },
+            vocab: [
+                { word: "turn in", pr: "/tɜːn ɪn/", en: "hand in", vi: "nộp bài", type: "phrasal verb", ex: "Turn in your homework." }
+            ],
+            analysis: "Ngữ cảnh làm bài tập và nộp vào ngày mai -> phải dùng 'turn in' hoặc 'hand in'.",
+            wrong: "A (stop + Ving là đúng). B (work on something là đúng). C (have to + V là đúng).",
+            tip: "Homework -> Turn in."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Identify the ERROR: In spite of (A) they were tired (B), they wanted to watch (C) the film.",
+        options: ["(A) In spite of", "(B) they were tired", "(C) watch", "No error"],
+        correct: 0,
+        explanation: {
+            correct: "A. In spite of -> Although",
+            translation: { en: "'In spite of' is followed by a noun/V-ing, but here we have a clause (subject + verb).", vi: "'In spite of' đi với danh từ/V-ing, ở đây ta có một mệnh đề (S+V) nên phải dùng 'Although'." },
+            vocab: [
+                { word: "tired", pr: "/ˈtaɪəd/", en: "needing rest", vi: "mệt", type: "adj", ex: "I am tired." }
+            ],
+            analysis: "Sửa 'In spite of' thành 'Although' hoặc 'Even though'.",
+            wrong: "B, C đều đúng cấu trúc.",
+            tip: "In spite of + N, Although + Clause."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "Identify the ERROR: He didn't used to (A) be a doctor, he used to (B) be a manager of (C) a (D) computer company.",
+        options: ["(A) didn't used to", "(B) used to", "(C) of", "(D) a"],
+        correct: 0,
+        explanation: {
+            correct: "A. didn't used to -> didn't use to",
+            translation: { en: "In negative sentences with 'did', we use 'use to' without 'd'.", vi: "Trong câu phủ định với 'did', ta dùng 'use to' (không có 'd')." },
+            vocab: [
+                { word: "manager", pr: "/ˈmænɪdʒə(r)/", en: "person in charge", vi: "quản lý", type: "noun", ex: "He is a manager." }
+            ],
+            analysis: "Phủ định: S + didn't + use to + V-inf.",
+            wrong: "B, C, D đều đúng ngữ pháp.",
+            tip: "Đã có trợ động từ 'did' thì không còn 'd' ở 'use'."
+        }
+    },
+
+    // CLOSEST/OPPOSITE (27-30)
+    {
+        stage: 1,
+        type: "mcq",
+        q: "CLOSEST in meaning: I hope there will be fewer <u>traffic jams</u> in the future.",
+        options: ["traffic lights", "traffic congestions", "traffic police", "traffic accidents"],
+        correct: 1,
+        explanation: {
+            correct: "B. traffic congestions",
+            translation: { en: "'Traffic jams' and 'traffic congestions' both mean a lot of cars unable to move.", vi: "'Traffic jams' và 'traffic congestions' đều có nghĩa là tắc nghẽn giao thông." },
+            vocab: [
+                { word: "congestion", pr: "/kənˈdʒestʃən/", en: "clogging", vi: "sự tắc nghẽn", type: "noun", ex: "Traffic congestion is bad." }
+            ],
+            analysis: "Từ đồng nghĩa phổ biến trong chủ đề giao thông.",
+            wrong: "A (đèn), C (cảnh sát), D (tai nạn) không đồng nghĩa.",
+            tip: "Jam = Congestion."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "CLOSEST in meaning: Martha is looking for her perfect Halloween <u>costume</u>.",
+        options: ["watching", "decorating", "finding", "wearing"],
+        correct: 2,
+        options: ["watching", "decorating", "finding", "wearing"], // Note: Question underlined 'looking for'
+        q: "CLOSEST in meaning: Martha is <u>looking for</u> her perfect Halloween costume.",
+        correct: 2,
+        explanation: {
+            correct: "C. finding",
+            translation: { en: "'Looking for' means searching or trying to find.", vi: "'Looking for' nghĩa là tìm kiếm." },
+            vocab: [
+                { word: "look for", pr: "/lʊk fɔː(r)/", en: "search", vi: "tìm kiếm", type: "phrasal verb", ex: "Look for clues." }
+            ],
+            analysis: "Đồng nghĩa của search/look for là find (tìm).",
+            wrong: "A (xem), B (trang trí), D (mặc).",
+            tip: "Look for = Find (process of finding)."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "OPPOSITE in meaning: I find historical monuments <u>boring</u>.",
+        options: ["awful", "fascinating", "interested", "tiring"],
+        correct: 1,
+        explanation: {
+            correct: "B. fascinating",
+            translation: { en: "'Fascinating' means very interesting, the opposite of 'boring'.", vi: "'Fascinating' nghĩa là rất thú vị, trái ngược với 'boring' (nhàm chán)." },
+            vocab: [
+                { word: "boring", pr: "/ˈbɔːrɪŋ/", en: "not interesting", vi: "chán", type: "adj", ex: "A boring book." },
+                { word: "fascinating", pr: "/ˈfæsɪneɪtɪŋ/", en: "very interesting", vi: "hấp dẫn", type: "adj", ex: "A fascinating story." }
+            ],
+            analysis: "Cần tìm từ mang nghĩa tích cực, cực kỳ thú vị.",
+            wrong: "A (kinh khủng - tiêu cực), C (sai loại từ vì vật dùng -ing), D (mệt mỏi - tiêu cực).",
+            tip: "Boring <-> Interesting/Fascinating."
+        }
+    },
+    {
+        stage: 1,
+        type: "mcq",
+        q: "OPPOSITE in meaning: My cousin wants to <u>borrow</u> some coins from my collections.",
+        options: ["give back", "receive", "lend", "buy"],
+        correct: 2,
+        explanation: {
+            correct: "C. lend",
+            translation: { en: "'Borrow' is to take, 'lend' is to give.", vi: "'Borrow' là mượn (lấy vào), 'lend' là cho mượn (cho đi)." },
+            vocab: [
+                { word: "borrow", pr: "/ˈbɒrəʊ/", en: "take to use temporarily", vi: "mượn", type: "verb", ex: "Borrow a pen." },
+                { word: "lend", pr: "/lend/", en: "give to use temporarily", vi: "cho mượn", type: "verb", ex: "Lend me a hand." }
+            ],
+            analysis: "Cặp từ trái ngược về hướng của hành động.",
+            wrong: "A (trả lại), B (nhận), D (mua).",
+            tip: "Borrow FROM someone <-> Lend TO someone."
+        }
+    },
+
+    // READING (31-35)
+    {
+        stage: 2,
+        type: "reading-cloze",
+        passage: "The Carnival in Rio de Janeiro, Brazil is the biggest carnival in the world which (31) ______ for five days. Every year in the month of February the festivities start. Hundreds of people are out on the streets enjoying the street bands, singers and orchestras...",
+        q: "Choose the word that fits blank (31):",
+        options: ["gets", "lasts", "makes", "longs"],
+        correct: 1,
+        explanation: {
+            correct: "B. lasts",
+            translation: { en: "'Lasts' is used to describe duration.", vi: "'Lasts' dùng để mô tả thời lượng kéo dài." },
+            vocab: [
+                { word: "last", pr: "/lɑːst/", en: "continue for time", vi: "kéo dài", type: "verb", ex: "The film lasts 2 hours." }
+            ],
+            analysis: "Nói về thời gian diễn ra của lễ hội (5 ngày) -> dùng động từ 'last'.",
+            wrong: "A, C, D không dùng để chỉ thời lượng trong cấu trúc này.",
+            tip: "Time duration -> Last."
+        }
+    }
+    // ... (To save space, I will integrate the rest into the JS logic below)
+];
+
+/* MORE DATA INJECTED VIA SCRIPT */
+const moreQuestions = [
+    {
+        stage: 2,
+        type: "reading-cloze",
+        passage: "...The main (32) ______ of the carnival is the Samba Parade in which 200 schools participate. The schools have elaborate costumes, floats and dancing styles. It is an (33) ______ experience!",
+        q: "Choose the word that fits blank (32):",
+        options: ["theme", "notice", "highlight", "guide"],
+        correct: 2,
+        explanation: {
+            correct: "C. highlight",
+            translation: { en: "'Highlight' means the most exciting or important part.", vi: "'Highlight' là phần nổi bật nhất, thú vị nhất." },
+            vocab: [{ word: "highlight", pr: "/ˈhaɪlaɪt/", en: "best part", vi: "điểm nhấn", type: "noun", ex: "The highlight of the trip." }],
+            analysis: "Diễu hành Samba là phần quan trọng nhất của lễ hội Rio.",
+            wrong: "A (chủ đề), B (thông báo), D (hướng dẫn).",
+            tip: "Best part = Highlight."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-cloze",
+        passage: "...The schools have elaborate costumes, floats and dancing styles. It is an (33) ______ experience!",
+        q: "Choose the word that fits blank (33):",
+        options: ["amazing", "unpleasant", "obvious", "actual"],
+        correct: 0,
+        explanation: {
+            correct: "A. amazing",
+            translation: { en: "A positive adjective to describe a great carnival.", vi: "Một tính từ tích cực để mô tả trải nghiệm lễ hội tuyệt vời." },
+            vocab: [{ word: "amazing", pr: "/əˈmeɪzɪŋ/", en: "very good", vi: "tuyệt vời", type: "adj", ex: "An amazing show." }],
+            analysis: "Dựa vào ngữ cảnh hào hứng của lễ hội Rio.",
+            wrong: "B (không thú vị), C (hiển nhiên), D (thực tế).",
+            tip: "Carnival description usually = Amazing/Fantastic."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-cloze",
+        passage: "La Tomatina - a fun filled battle - begins on the last Wednesday of August. Thousands of people come from all over the world to participate in a grand tomato fight. Puzzled! (34) ______ does it happen? To have fun.",
+        q: "Choose the word that fits blank (34):",
+        options: ["Where", "Why", "When", "How"],
+        correct: 1,
+        explanation: {
+            correct: "B. Why",
+            translation: { en: "The answer 'To have fun' indicates a question about purpose.", vi: "Câu trả lời 'Để vui chơi' cho thấy câu hỏi phải về mục đích (Tại sao)." },
+            vocab: [{ word: "puzzled", pr: "/ˈpʌzld/", en: "confused", vi: "bối rối", type: "adj", ex: "I was puzzled." }],
+            analysis: "Căn cứ vào câu trả lời ngay phía sau 'To have fun'.",
+            wrong: "A (Ở đâu), C (Khi nào), D (Thế nào) không khớp với câu trả lời.",
+            tip: "Answer starts with 'To + V' -> Question is 'Why'."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-cloze",
+        passage: "...They are asked to squish the tomatoes (35) ______ throwing so that it does not hurt the other people.",
+        q: "Choose the word that fits blank (35):",
+        options: ["during", "after", "before", "By"],
+        correct: 2,
+        explanation: {
+            correct: "C. before",
+            translation: { en: "You must squish them first so they are soft when thrown.", vi: "Bạn phải bóp nát cà chua TRƯỚC khi ném để không làm đau người khác." },
+            vocab: [{ word: "precautions", pr: "/prɪˈkɔːʃnz/", en: "safety measures", vi: "biện pháp phòng ngừa", type: "noun", ex: "Take precautions." }],
+            analysis: "Logic an toàn: Bóp -> Ném.",
+            wrong: "A (trong khi), B (sau khi), D (bằng cách).",
+            tip: "Safety first: Squish BEFORE throw."
+        }
+    },
+    // READING PASSAGE 2 (36-40)
+    {
+        stage: 2,
+        type: "reading-comp",
+        passage: "A website that provides price comparisons for flights, hotels and car hire across the globe has made some bold predictions for what travel will look like in a decade from now...",
+        q: "What does the website provide for flights, hotels and car hire?",
+        options: ["free upgrades", "online bookings", "price comparisons", "discounts"],
+        correct: 2,
+        explanation: {
+            correct: "C. price comparisons",
+            translation: { en: "Mentioned in the first line of the passage.", vi: "Được nhắc ngay ở dòng đầu tiên của đoạn văn." },
+            vocab: [{ word: "comparisons", pr: "/kəmˈpærɪsnz/", en: "looking at differences", vi: "sự so sánh", type: "noun", ex: "Price comparisons." }],
+            analysis: "Keyword: 'provides price comparisons'.",
+            wrong: "A, B, D không được nhắc đến là chức năng chính trong câu đầu.",
+            tip: "Scan for keywords in the first sentence."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-comp",
+        passage: "...The site Skyscanner.com has just released a report of what holidays in the not-too-distant future might look like...",
+        q: "What did the website release?",
+        options: ["a report", "a warning", "a profits warning", "a new version of its software"],
+        correct: 0,
+        explanation: {
+            correct: "A. a report",
+            translation: { en: "The text says 'just released a report'.", vi: "Văn bản nói 'vừa phát hành một bản báo cáo'." },
+            vocab: [{ word: "released", pr: "/rɪˈliːst/", en: "made public", vi: "phát hành/công bố", type: "verb", ex: "Release a movie." }],
+            analysis: "Keyword: 'released a report'.",
+            wrong: "B, C, D không có trong văn bản.",
+            tip: "Look for the verb 'released'."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-comp",
+        passage: "...The report is a result of the collaboration between travel experts and international technology experts.",
+        q: "Who collaborated to make the report?",
+        options: ["guidebook writers", "travel and technology experts", "hotel management CEOs", "Virgin Galactic and Hilton Hotels"],
+        correct: 1,
+        explanation: {
+            correct: "B. travel and technology experts",
+            translation: { en: "The report resulted from collaboration between travel and tech experts.", vi: "Bản báo cáo là kết quả sự hợp tác giữa chuyên gia du lịch và công nghệ." },
+            vocab: [{ word: "collaboration", pr: "/kəˌlæbəˈreɪʃn/", en: "working together", vi: "sự hợp tác", type: "noun", ex: "Global collaboration." }],
+            analysis: "Keyword: 'collaboration between travel experts and international technology experts'.",
+            wrong: "A, C, D là các đối tượng khác không được nhắc đến.",
+            tip: "Keyword matching: experts."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-comp",
+        passage: "...commercial companies are lining up to make it a more affordable proposition.",
+        q: "What are companies lining up to do?",
+        options: ["produce travel reports", "build underwater hotels", "accept bookings for 2024", "make space travel cheaper"],
+        correct: 3,
+        explanation: {
+            correct: "D. make space travel cheaper",
+            translation: { en: "'Affordable' means cheaper or within budget.", vi: "'Affordable' có nghĩa là rẻ hơn, vừa túi tiền hơn." },
+            vocab: [{ word: "affordable", pr: "/əˈfɔːdəbl/", en: "not too expensive", vi: "giá cả phải chăng", type: "adj", ex: "Affordable housing." }],
+            analysis: "Keyword: 'make it a more affordable proposition' (về du lịch không gian).",
+            wrong: "A, B, C không phải là mục tiêu của việc 'lining up' trong câu này.",
+            tip: "Affordable = Cheap/Cheaper."
+        }
+    },
+    {
+        stage: 2,
+        type: "reading-comp",
+        passage: "...Skyscanner also predicts an explosion in the number of underwater hotel rooms, which it says will become a mainstream travel option.",
+        q: "What will become mainstream in the future?",
+        options: ["underwater hotel rooms", "online shopping", "day trips to space", "futuristic dining"],
+        correct: 0,
+        explanation: {
+            correct: "A. underwater hotel rooms",
+            translation: { en: "The text links 'underwater hotel rooms' with 'mainstream travel option'.", vi: "Văn bản kết nối 'phòng khách sạn dưới nước' với 'lựa chọn du lịch phổ biến'." },
+            vocab: [{ word: "mainstream", pr: "/ˈmeɪnstriːm/", en: "common/popular", vi: "phổ biến/xu hướng chính", type: "adj", ex: "Mainstream music." }],
+            analysis: "Keyword: 'underwater hotel rooms... become a mainstream travel option'.",
+            wrong: "B không có. C là 'space travel' nhưng chưa nói là 'mainstream' bằng khách sạn dưới nước. D là 'expect advances' chứ không dùng 'mainstream'.",
+            tip: "Look for the word 'mainstream'."
+        }
+    },
+    // SIGNS (41-42)
+    {
+        stage: 2,
+        type: "mcq",
+        q: "Look at the sign (VISITOR PARKING ONLY). What does it say?",
+        options: ["This parking space is only for visitors.", "People can only park their car here after their visit.", "You can park your car here unless you are visitors.", "Anyone can park their car here."],
+        correct: 0,
+        explanation: {
+            correct: "A. This parking space is only for visitors.",
+            translation: { en: "Only for visitors means other people cannot park here.", vi: "Chỉ dành cho khách nghĩa là người khác không được đỗ xe ở đây." },
+            vocab: [{ word: "visitor", pr: "/ˈvɪzɪtə(r)/", en: "guest", vi: "khách", type: "noun", ex: "Welcome visitors." }],
+            analysis: "Chữ 'Only' giới hạn đối tượng là 'Visitor'.",
+            wrong: "B (sai thời điểm), C (sai vì 'unless' nghĩa là trừ khi), D (quá chung chung).",
+            tip: "Only X = Just for X."
+        }
+    },
+    {
+        stage: 2,
+        type: "mcq",
+        q: "Note: 'Marcus, Don’t forget we’re going to the cinema this afternoon. James. I’m not sure what film we’re going to see, but decide when we get there.' Why has James left a note?",
+        options: ["to invite him to the cinema", "to choose the cinema", "to suggest a film which they could see", "to remind him about an arrangement"],
+        correct: 3,
+        explanation: {
+            correct: "D. to remind him about an arrangement",
+            translation: { en: "The phrase 'Don't forget' is used to remind someone.", vi: "Cụm từ 'Don't forget' được dùng để nhắc nhở ai đó." },
+            vocab: [{ word: "remind", pr: "/rɪˈmaɪnd/", en: "make someone remember", vi: "nhắc nhở", type: "verb", ex: "Remind me to call." }],
+            analysis: "Mục đích là nhắc cuộc hẹn đi xem phim đã có từ trước.",
+            wrong: "A (họ đã có lịch rồi, không phải mời mới). B, C (chưa quyết định phim hay rạp cụ thể).",
+            tip: "Don't forget = Remind."
+        }
+    },
+    // WRITING (43-47) - Simplified as MCQ for the web game
+    {
+        stage: 3,
+        type: "mcq",
+        q: "Rewrite: I usually stayed up late to watch football matches last year, but now I don’t. (using 'used')",
+        options: [
+            "I used to staying up late last year.",
+            "I used to stay up late to watch football matches last year.",
+            "I am used to stay up late last year.",
+            "I used stay up late last year."
+        ],
+        correct: 1,
+        explanation: {
+            correct: "B. I used to stay up late to watch football matches last year.",
+            translation: { en: "Used to + infinitive describes a past habit.", vi: "Used to + động từ nguyên mẫu mô tả thói quen trong quá khứ." },
+            vocab: [{ word: "stay up late", pr: "/steɪ ʌp leɪt/", en: "not go to bed", vi: "thức khuya", type: "idiom", ex: "Don't stay up late." }],
+            analysis: "Cấu trúc: S + used to + V-inf.",
+            wrong: "A (sai V-ing), C (sai 'am used to'), D (thiếu 'to').",
+            tip: "Used to + V-inf (Đã từng)."
+        }
+    },
+    {
+        stage: 3,
+        type: "mcq",
+        q: "Rewrite: I thought the film would be interesting, but it wasn’t. (using 'as')",
+        options: [
+            "The film was as interesting as I thought.",
+            "The film was not as interesting as I thought.",
+            "The film is not as interesting as I think.",
+            "The film as interesting but I thought not."
+        ],
+        correct: 1,
+        explanation: {
+            correct: "B. The film was not as interesting as I thought.",
+            translation: { en: "Not as...as expresses that something is less than expected.", vi: "Cấu trúc 'Not as...as' thể hiện cái gì đó không bằng mức kỳ vọng." },
+            vocab: [{ word: "interesting", pr: "/ˈɪntrəstɪŋ/", en: "holding attention", vi: "thú vị", type: "adj", ex: "An interesting movie." }],
+            analysis: "Chuyển từ câu tương phản sang so sánh không bằng.",
+            wrong: "A (ngược nghĩa), C (sai thì), D (sai cấu trúc).",
+            tip: "Thought X but not = Not as X as thought."
+        }
+    },
+    {
+        stage: 3,
+        type: "mcq",
+        q: "Rewrite: I was excited about the music of the film. (using 'exciting')",
+        options: [
+            "The music of the film was exciting to me.",
+            "I found the music of the film exciting.",
+            "The music of the film was exciting.",
+            "All of the above are correct."
+        ],
+        correct: 3,
+        explanation: {
+            correct: "D. All of the above are correct.",
+            translation: { en: "All options correctly use 'exciting' to describe the music.", vi: "Tất cả các phương án đều dùng đúng 'exciting' để mô tả âm nhạc." },
+            vocab: [{ word: "exciting", pr: "/ɪkˈsaɪtɪŋ/", en: "causing excitement", vi: "hào hứng/thú vị", type: "adj", ex: "An exciting game." }],
+            analysis: "Vật (music) -> tính từ -ing (exciting).",
+            wrong: "Không có câu nào sai ngữ pháp.",
+            tip: "Music is exciting -> I am excited."
+        }
+    },
+    {
+        stage: 3,
+        type: "mcq",
+        q: "Rewrite: Despite the main actress’s beauty, she didn’t act so well. (using 'although')",
+        options: [
+            "Although the main actress was beautiful, she didn’t act so well.",
+            "Although the beauty actress, she didn't act well.",
+            "Although she was beauty, she didn't act well.",
+            "Although the main actress’s beauty, she didn’t act so well."
+        ],
+        correct: 0,
+        explanation: {
+            correct: "A. Although the main actress was beautiful, she didn’t act so well.",
+            translation: { en: "Although is followed by a clause (subject + verb).", vi: "Although đi kèm với một mệnh đề (Chủ ngữ + Động từ)." },
+            vocab: [{ word: "act", pr: "/ækt/", en: "perform in a play", vi: "diễn xuất", type: "verb", ex: "She acts well." }],
+            analysis: "Biến cụm danh từ 'beauty' thành mệnh đề 'was beautiful'.",
+            wrong: "B, D (sai vì sau although không được dùng cụm danh từ). C (beauty là danh từ, không dùng sau was).",
+            tip: "Despite + N = Although + Clause."
+        }
+    },
+    {
+        stage: 3,
+        type: "mcq",
+        q: "Rewrite: Although the ticket was not expensive, I didn’t want to buy it. (using 'despite')",
+        options: [
+            "Despite the ticket was not expensive, I didn't buy it.",
+            "Despite not expensive ticket, I didn't buy it.",
+            "Despite the inexpensive ticket, I didn’t want to buy it.",
+            "Despite of the ticket was cheap, I didn't buy it."
+        ],
+        correct: 2,
+        explanation: {
+            correct: "C. Despite the inexpensive ticket, I didn’t want to buy it.",
+            translation: { en: "Despite + noun phrase.", vi: "Despite + cụm danh từ." },
+            vocab: [{ word: "inexpensive", pr: "/ˌɪnɪkˈspensɪv/", en: "cheap", vi: "không đắt", type: "adj", ex: "An inexpensive meal." }],
+            analysis: "Rút gọn mệnh đề thành cụm danh từ.",
+            wrong: "A (sau despite không dùng mệnh đề). B (sai cấu trúc cụm danh từ). D (Despite không đi với 'of').",
+            tip: "Despite + Noun Phrase."
+        }
+    },
+    // LISTENING (48-52)
+    {
+        stage: 4,
+        type: "mcq",
+        q: "🎧 (Audio) Simon’s mum decided to take him to the climbing centre because ______.",
+        options: ["she had enjoyed going there.", "her friend had recommended it.", "Simon had been there with his school."],
+        correct: 1,
+        explanation: {
+            correct: "B. her friend had recommended it.",
+            translation: { en: "The reason for the visit was a recommendation.", vi: "Lý do của chuyến đi là do sự giới thiệu." },
+            vocab: [{ word: "recommend", pr: "/ˌrekəˈmend/", en: "suggest", vi: "giới thiệu/gợi ý", type: "verb", ex: "Highly recommend." }],
+            analysis: "Dựa trên nội dung nghe được (giả định theo đề bài).",
+            wrong: "A, C là thông tin gây nhiễu.",
+            tip: "Listen for 'friend told her' or 'suggested'."
+        }
+    },
+    {
+        stage: 4,
+        type: "mcq",
+        q: "🎧 (Audio) Before he went to the centre, Simon was ______.",
+        options: ["worried about going climbing there.", "interested in seeing the climbing wall.", "disappointed to hear it was all indoors."],
+        correct: 1,
+        explanation: {
+            correct: "B. interested in seeing the climbing wall.",
+            translation: { en: "Simon felt positive/curious before going.", vi: "Simon cảm thấy tích cực/tò mò trước khi đi." },
+            vocab: [{ word: "interested", pr: "/ˈɪntrəstɪd/", en: "showing curiosity", vi: "quan tâm/hứng thú", type: "adj", ex: "I'm interested in art." }],
+            analysis: "Cảm xúc trước sự kiện.",
+            wrong: "A, C là cảm xúc tiêu cực.",
+            tip: "Focus on Simon's attitude adjectives."
+        }
+    },
+    {
+        stage: 4,
+        type: "mcq",
+        q: "🎧 (Audio) Simon says that at the centre there were ______.",
+        options: ["lots of people when it opened.", "many different types of people.", "no other people his age."],
+        correct: 1,
+        explanation: {
+            correct: "B. many different types of people.",
+            translation: { en: "The crowd was diverse.", vi: "Đám đông rất đa dạng." },
+            vocab: [{ word: "diverse", pr: "/daɪˈvɜːs/", en: "varied", vi: "đa dạng", type: "adj", ex: "A diverse group." }],
+            analysis: "Mô tả về con người tại trung tâm.",
+            wrong: "A, C mô tả về số lượng hoặc độ tuổi cụ thể không chính xác.",
+            tip: "Listen for words like 'all sorts', 'various', 'everyone'."
+        }
+    },
+    {
+        stage: 4,
+        type: "mcq",
+        q: "🎧 (Audio) What did Simon think about the climbing wall?",
+        options: ["He thought it looked very high.", "He was afraid he might fall.", "He found the foot holes helpful."],
+        correct: 2,
+        explanation: {
+            correct: "C. He found the foot holes helpful.",
+            translation: { en: "The wall features helped him climb.", vi: "Các đặc điểm trên tường giúp cậu ấy leo lên." },
+            vocab: [{ word: "helpful", pr: "/ˈhelpfl/", en: "useful", vi: "có ích", type: "adj", ex: "A helpful guide." }],
+            analysis: "Cảm nhận về bức tường leo núi.",
+            wrong: "A, B là những nỗi sợ không được khẳng định là suy nghĩ chính.",
+            tip: "Look for positive feedback about features."
+        }
+    },
+    {
+        stage: 4,
+        type: "mcq",
+        q: "🎧 (Audio) Why was Simon unhappy with his first climb?",
+        options: ["He was slower than everyone else.", "He found it hurt his arms.", "He didn’t get to the top."],
+        correct: 2,
+        explanation: {
+            correct: "C. He didn’t get to the top.",
+            translation: { en: "He failed to reach the summit on the first try.", vi: "Cậu ấy đã không lên được đến đỉnh trong lần thử đầu tiên." },
+            vocab: [{ word: "unhappy", pr: "/ʌnˈhæpi/", en: "sad/not satisfied", vi: "không vui/không hài lòng", type: "adj", ex: "Unhappy with results." }],
+            analysis: "Nguyên nhân của sự không hài lòng.",
+            wrong: "A, B không phải là lý do chính được nhắc đến.",
+            tip: "Listen for words like 'failed', 'didn't reach', 'give up'."
+        }
+    }
+];
+
+// Combine all questions
+const allQuestions = [...questions, ...moreQuestions];
+
+/* GAME LOGIC */
+let currentStageIndex = 0;
+let currentQuestionIndexInStage = 0;
+let stageQuestions = [];
+let score = 0;
+let userAnswers = [];
+
+const app = {
+    progressFill: document.getElementById('progressFill'),
+    scoreDisplay: document.getElementById('scoreDisplay'),
+    stageName: document.getElementById('stageName'),
+    screens: {
+        map: document.getElementById('mapScreen'),
+        game: document.getElementById('gameScreen'),
+        end: document.getElementById('endScreen')
+    }
+};
+
+function startStage(index) {
+    if (index > currentStageIndex) return; // Locked
+
+    currentStageIndex = index;
+    stageQuestions = allQuestions.filter(q => q.stage === index);
+    currentQuestionIndexInStage = 0;
+    
+    app.stageName.innerText = stages[index].name;
+    showScreen('game');
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const qData = stageQuestions[currentQuestionIndexInStage];
+    const container = document.getElementById('questionContainer');
+    const feedback = document.getElementById('feedbackContainer');
+    const nav = document.getElementById('navigation');
+    
+    feedback.classList.add('hidden');
+    nav.classList.add('hidden');
+    
+    let html = `
+        <div class="mb-4 flex items-center justify-between">
+            <span class="bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-bold">Câu ${currentQuestionIndexInStage + 1}/${stageQuestions.length}</span>
+            <span class="text-slate-400 text-xs">Stage: ${stages[currentStageIndex].name}</span>
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold mb-6">${qData.q}</h2>
+    `;
+
+    if (qData.type.startsWith('reading')) {
+        html = `
+            <div class="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-sm mb-6 max-h-60 overflow-y-auto">
+                <p class="italic text-slate-700">${qData.passage}</p>
+            </div>
+            ${html}
+        `;
+    }
+
+    html += `<div class="grid grid-cols-1 gap-3">`;
+    qData.options.forEach((opt, idx) => {
+        html += `
+            <button onclick="checkAnswer(${idx})" class="option-btn text-left p-4 rounded-xl border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all font-medium flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold">${String.fromCharCode(65 + idx)}</span>
+                ${opt}
+            </button>
+        `;
+    });
+    html += `</div>`;
+
+    container.innerHTML = html;
+}
+
+function checkAnswer(idx) {
+    const qData = stageQuestions[currentQuestionIndexInStage];
+    const buttons = document.querySelectorAll('.option-btn');
+    const feedback = document.getElementById('feedbackContainer');
+    const nav = document.getElementById('navigation');
+    
+    // Disable buttons
+    buttons.forEach(btn => btn.disabled = true);
+
+    const isCorrect = (idx === qData.correct);
+    if (isCorrect) {
+        score += 10;
+        app.scoreDisplay.innerText = score;
+        buttons[idx].classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+        document.getElementById('soundCorrect').play();
+    } else {
+        buttons[idx].classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+        buttons[qData.correct].classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+        document.getElementById('soundWrong').play();
+    }
+
+    // Show Explanation
+    feedback.innerHTML = formatExplanation(qData.explanation);
+    feedback.classList.remove('hidden');
+    nav.classList.remove('hidden');
+    
+    // Update progress
+    updateProgress();
+}
+
+function formatExplanation(exp) {
+    let vocabHtml = exp.vocab.map(v => `
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="font-bold text-blue-600">${v.word} <span class="text-xs text-slate-500 font-normal">${v.pr}</span></div>
+            <div class="text-xs mb-1"><span class="italic text-pink-500">${v.type}</span> | ${v.en}</div>
+            <div class="text-sm font-semibold">${v.vi}</div>
+            <div class="text-xs text-slate-500 mt-1 italic">Ex: ${v.ex}</div>
+        </div>
+    `).join('');
+
+    return `
+        <div class="space-y-4">
+            <div class="flex items-center gap-2 text-green-600 font-bold text-lg">
+                ✅ 1. ĐÁP ÁN ĐÚNG: ${exp.correct}
+            </div>
+            
+            <div class="border-t pt-3">
+                <div class="font-bold text-blue-500 mb-1">🌍 2. DỊCH NGHĨA SONG NGỮ</div>
+                <div class="text-sm">🇬🇧 ${exp.translation.en}</div>
+                <div class="text-sm font-semibold text-slate-700 mt-1">🇻🇳 ${exp.translation.vi}</div>
+            </div>
+
+            <div class="border-t pt-3">
+                <div class="font-bold text-blue-500 mb-2">📚 3. PHÂN TÍCH TỪ VỰNG</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    ${vocabHtml}
+                </div>
+            </div>
+
+            <div class="border-t pt-3">
+                <div class="font-bold text-blue-500 mb-1">🔍 4. GIẢI THÍCH CHI TIẾT</div>
+                <p class="text-sm text-slate-700">${exp.analysis}</p>
+            </div>
+
+            <div class="border-t pt-3">
+                <div class="font-bold text-blue-500 mb-1">⚠️ 5. TẠI SAO CÁC ĐÁP ÁN KHÁC SAI</div>
+                <p class="text-sm text-slate-600 italic">${exp.wrong}</p>
+            </div>
+
+            <div class="bg-pink-50 p-3 rounded-xl border border-pink-100">
+                <div class="font-bold text-pink-600 mb-1">🧠 6. MẸO GHI NHỚ (Memory Tips)</div>
+                <p class="text-sm text-pink-700 font-medium">${exp.tip}</p>
+            </div>
+        </div>
+    `;
+}
+
+function nextQuestion() {
+    currentQuestionIndexInStage++;
+    
+    if (currentQuestionIndexInStage < stageQuestions.length) {
+        renderQuestion();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        // Stage completed
+        if (currentStageIndex < stages.length - 1) {
+            currentStageIndex++;
+            unlockIsland(currentStageIndex);
+            showScreen('map');
+            updateMapMessage();
+        } else {
+            showEndScreen();
+        }
+    }
+}
+
+function unlockIsland(idx) {
+    const island = document.getElementById(`island${idx}`);
+    island.classList.remove('island-locked');
+    island.classList.add('island-active');
+}
+
+function updateMapMessage() {
+    const explorer = document.querySelector('.explorer-anim .bg-blue-600');
+    explorer.innerText = `Explorer: "Tuyệt vời! Chặng ${currentStageIndex} đã mở khóa!"`;
+}
+
+function updateProgress() {
+    const totalQ = allQuestions.length;
+    // Rough calculation of completed questions
+    const completed = allQuestions.indexOf(stageQuestions[currentQuestionIndexInStage]) + 1;
+    const percent = (completed / totalQ) * 100;
+    app.progressFill.style.width = `${percent}%`;
+}
+
+function showScreen(screenId) {
+    Object.values(app.screens).forEach(s => s.classList.add('hidden'));
+    app.screens[screenId].classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showEndScreen() {
+    showScreen('end');
+    const finalScore = score / 10;
+    document.getElementById('finalScoreText').innerText = `${finalScore}/${allQuestions.length}`;
+    
+    let rank = "Excellent 🌟";
+    if (finalScore < 30) rank = "Try again 💪";
+    else if (finalScore < 45) rank = "Good 👍";
+    
+    document.getElementById('rankText').innerText = rank;
+}
+
+// Initial state
+window.onload = () => {
+    // Stage 0 is already unlocked by default in CSS/HTML but let's be explicit
+    unlockIsland(0);
+};
+
+</script>
+</body>
+</html>
